@@ -24,7 +24,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"2026-03-13T23:00:00Z\",\n  \"timeEnd\": \"2026-03-14T01:00:00Z\",\n  \"actualHours\": 2,\n  \"billableOption\": \"DoNotBill\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
+        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"={{ $json.date + 'T23:00:00' }}\",\n  \"timeEnd\": \"={{ $json.nextDate + 'T01:00:00' }}\",\n  \"actualHours\": 2,\n  \"billableOption\": \"DoNotBill\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -59,7 +59,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"={{ $json.date + 'T15:00:00Z' }}\"\n  \"timeEnd\": \"={{ $json.date + 'T23:00:00Z' }}\",\n  \"actualHours\": 8,\n  \"billableOption\": \"Billable\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
+        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"={{ $json.date + 'T15:00:00' }}\",\n  \"timeEnd\": \"={{ $json.date + 'T23:00:00' }}\",\n  \"actualHours\": 8,\n  \"billableOption\": \"Billable\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -94,7 +94,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\n\nconst arizona = new Date(\n  now.toLocaleString(\"en-US\", { timeZone: \"America/Phoenix\" })\n);\n\nreturn [\n  {\n    json: {\n      timezone: \"GMT-7\",\n      iso: arizona.toISOString(),\n      date: arizona.toISOString().split(\"T\")[0],\n      time: arizona.toTimeString().split(\" \")[0],\n      year: arizona.getFullYear(),\n      month: arizona.getMonth() + 1,\n      day: arizona.getDate(),\n      hour: arizona.getHours(),\n      minute: arizona.getMinutes(),\n      second: arizona.getSeconds()\n    }\n  }\n];"
+        "jsCode": "const now = new Date();\n\nconst arizona = new Date(\n  now.toLocaleString(\"en-US\", { timeZone: \"America/Phoenix\" })\n);\n\nconst tomorrow = new Date(arizona);\ntomorrow.setDate(tomorrow.getDate() + 1);\n\nreturn [\n  {\n    json: {\n      timezone: \"GMT-7\",\n      iso: arizona.toISOString(),\n      date: arizona.toISOString().split(\"T\")[0],\n      nextDate: tomorrow.toISOString().split(\"T\")[0],\n      time: arizona.toTimeString().split(\" \")[0],\n      year: arizona.getFullYear(),\n      month: arizona.getMonth() + 1,\n      day: arizona.getDate(),\n      hour: arizona.getHours(),\n      minute: arizona.getMinutes(),\n      second: arizona.getSeconds()\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
