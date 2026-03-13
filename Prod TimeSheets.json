@@ -30,8 +30,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        176,
-        -144
+        256,
+        -240
       ],
       "id": "9444a585-3d91-4053-8e95-d0b610975a0e",
       "name": "CW NON-Billable Post 2hrs"
@@ -65,42 +65,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        0,
-        32
+        256,
+        -32
       ],
       "id": "735b6ef8-fea9-4406-a247-7d6c9be98c46",
       "name": "CW Billable Post 8hrs"
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 0 18 * * 1-5"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        -416,
-        -144
-      ],
-      "id": "31f606d9-b7f0-4d40-8919-efff1b33a992",
-      "name": "Schedule Trigger",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const now = new Date();\n\nconst arizona = new Date(\n  now.toLocaleString(\"en-US\", { timeZone: \"America/Phoenix\" })\n);\n\nreturn [\n  {\n    json: {\n      timezone: \"GMT-7\",\n      iso: arizona.toISOString(),\n      date: arizona.toISOString().split(\"T\")[0],\n      time: arizona.toTimeString().split(\" \")[0],\n      year: arizona.getFullYear(),\n      month: arizona.getMonth() + 1,\n      day: arizona.getDate(),\n      hour: arizona.getHours(),\n      minute: arizona.getMinutes(),\n      second: arizona.getSeconds()\n    }\n  }\n];"
+        "jsCode": "const formatter = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'America/Phoenix',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n});\n\nconst parts = formatter.formatToParts(new Date());\nconst year = parts.find(p => p.type === 'year').value;\nconst month = parts.find(p => p.type === 'month').value;\nconst day = parts.find(p => p.type === 'day').value;\n\nconst date = `${year}-${month}-${day}`;\n\nreturn [{\n  json: {\n    timezone: 'America/Phoenix',\n    date\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -224,
-        -144
+        -480,
+        -464
       ],
       "id": "c34ccf15-7d2d-4114-bb82-959d19f28175",
       "name": "Set Current Date and Time GMT -7"
@@ -112,11 +91,95 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
-        -144
+        48,
+        -128
       ],
       "id": "b7e6c8c7-0808-4125-80b2-f4f638900b3d",
       "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 400,
+        "width": 912,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -288
+      ],
+      "id": "1344df01-a57b-45ae-a80b-da452a26b9a8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      team: \"SOC\",\n      companyId: 23797,\n      chargeToType: \"ChargeCode\",\n      chargeToId: 35,\n      locationId: 11,\n      businessUnitId: 11,\n      workTypeId: 126,\n      shifts: [\n        {\n          name: \"1st\",\n          start: \"07:00\",\n          end: \"17:00\",\n          members: [\n            { memberId: 913, identifier: \"ASchwartz\", name: \"Adam Schwartz\", days: [\"Sun\",\"Mon\",\"Tue\",\"Wed\"], workRoleId: 139 },\n            { memberId: 800, identifier: \"LPrice\", name: \"Lawonda Price\", days: [\"Sun\",\"Mon\",\"Tue\",\"Wed\"], workRoleId: 139 },\n            { memberId: 802, identifier: \"JGoff-Foster\", name: \"Jonathan Goff-Foster\", days: [\"Wed\",\"Thu\",\"Fri\",\"Sat\"], workRoleId: 139 },\n            { memberId: 952, identifier: \"RThompson\", name: \"Ryan Thompson\", days: [\"Wed\",\"Thu\",\"Fri\",\"Sat\"], workRoleId: 139 },\n            { memberId: 553, identifier: \"mswain\", name: \"Michael Swain\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\"], workRoleId: 97 },\n            { memberId: 947, identifier: \"chelstein\", name: \"Chuck Helstein\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\"], workRoleId: 141 }\n          ]\n        },\n        {\n          name: \"2nd\",\n          start: \"14:00\",\n          end: \"00:00\",\n          members: [\n            { memberId: 511, identifier: \"ecollier\", name: \"Ethan Collier\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\"], workRoleId: 141 }\n          ]\n        },\n        {\n          name: \"3rd\",\n          start: \"22:00\",\n          end: \"08:00\",\n          members: [\n            { memberId: 911, identifier: \"BAfilal\", name: \"Badr Afilal\", days: [\"Tue\",\"Wed\",\"Thu\",\"Fri\"], workRoleId: 102 },\n            { memberId: 915, identifier: \"MDghoughi\", name: \"Marouane Dghoughi\", days: [\"Sat\",\"Sun\",\"Mon\",\"Tue\"], workRoleId: 139 }\n          ]\n        }\n      ],\n      dailyHours: {\n        billable: 8,\n        admin: 2\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "89a3792f-a454-4420-81c5-16cb23bcfe16",
+      "name": "schedule/shift version"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"customers\": [\n    {\n      \"companyId\": 26401,\n      \"identifier\": \"TOW\",\n      \"name\": \"Town of Wickenburg\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 27273,\n      \"identifier\": \"GCON\",\n      \"name\": \"GCON\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32589,\n      \"identifier\": \"SPN\",\n      \"name\": \"Spinato's Pizza\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23380,\n      \"identifier\": \"OW\",\n      \"name\": \"Openworks\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23474,\n      \"identifier\": \"Spear_GMI\",\n      \"name\": \"Spear Education\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 21553,\n      \"identifier\": \"LP_GMI\",\n      \"name\": \"LeadPoint USA\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32608,\n      \"identifier\": \"OnQGlobal\",\n      \"name\": \"OnQGlobal\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 28075,\n      \"identifier\": \"RIINTL\",\n      \"name\": \"RI International\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23530,\n      \"identifier\": \"VGCC_GMI\",\n      \"name\": \"Valor Global, LLC\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32051,\n      \"identifier\": \"Technology Spa\",\n      \"name\": \"Technology Spa\",\n      \"billable\": true\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -64
+      ],
+      "id": "1b489c68-0740-4cf1-890c-7f7f90b597be",
+      "name": "SOC Clients"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"team\": \"SOC\",\n  \"companyId\": 23797,\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workTypeId\": 126,\n  \"members\": [\n    {\n      \"memberId\": 947,\n      \"identifier\": \"chelstein\",\n      \"name\": \"Chuck Helstein\",\n      \"title\": \"SOC Manager\",\n      \"workRoleId\": 141,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 913,\n      \"identifier\": \"ASchwartz\",\n      \"name\": \"Adam Schwartz\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sun\",\"Mon\",\"Tue\",\"Wed\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 800,\n      \"identifier\": \"LPrice\",\n      \"name\": \"Lawonda Price\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sun\",\"Mon\",\"Tue\",\"Wed\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 802,\n      \"identifier\": \"JGoff-Foster\",\n      \"name\": \"Jonathan Goff-Foster\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Wed\",\"Thu\",\"Fri\",\"Sat\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 952,\n      \"identifier\": \"RThompson\",\n      \"name\": \"Ryan Thompson\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Wed\",\"Thu\",\"Fri\",\"Sat\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 553,\n      \"identifier\": \"mswain\",\n      \"name\": \"Michael Swain\",\n      \"title\": \"L2 Analyst\",\n      \"workRoleId\": 97,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 511,\n      \"identifier\": \"ecollier\",\n      \"name\": \"Ethan Collier\",\n      \"title\": \"SOC Lead\",\n      \"workRoleId\": 141,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 911,\n      \"identifier\": \"BAfilal\",\n      \"name\": \"Badr Afilal\",\n      \"title\": \"Pen Tester\",\n      \"workRoleId\": 102,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Tue\",\"Wed\",\"Thu\",\"Fri\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 915,\n      \"identifier\": \"MDghoughi\",\n      \"name\": \"Marouane Dghoughi\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sat\",\"Sun\",\"Mon\",\"Tue\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -272
+      ],
+      "id": "e581b2c1-6c4b-4f1f-8113-62eb5ad24dc2",
+      "name": "SOC Roster"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -128
+      ],
+      "id": "dd871585-a3ab-47dd-9e47-e37046af4b87",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -144
+      ],
+      "id": "0fd8ba9c-d131-4b7d-9997-6023574b98c8",
+      "name": "When clicking 'Execute workflow'"
     }
   ],
   "connections": {
@@ -125,27 +188,11 @@
         []
       ]
     },
-    "Schedule Trigger": {
-      "main": [
-        [
-          {
-            "node": "Set Current Date and Time GMT -7",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Set Current Date and Time GMT -7": {
       "main": [
         [
           {
-            "node": "CW Billable Post 8hrs",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Code in JavaScript",
+            "node": "Aggregate",
             "type": "main",
             "index": 0
           }
@@ -157,6 +204,81 @@
         [
           {
             "node": "CW NON-Billable Post 2hrs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CW Billable Post 8hrs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schedule/shift version": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOC Clients": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOC Roster": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Current Date and Time GMT -7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SOC Roster",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SOC Clients",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "schedule/shift version",
             "type": "main",
             "index": 0
           }
