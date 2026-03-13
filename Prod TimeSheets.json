@@ -19,10 +19,6 @@
             {
               "name": "Accept",
               "value": "application/json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
             }
           ]
         },
@@ -34,7 +30,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        800,
+        960,
         -96
       ],
       "id": "9444a585-3d91-4053-8e95-d0b610975a0e",
@@ -58,10 +54,6 @@
             {
               "name": "Accept",
               "value": "application/json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
             }
           ]
         },
@@ -73,8 +65,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        800,
-        -272
+        1056,
+        -256
       ],
       "id": "735b6ef8-fea9-4406-a247-7d6c9be98c46",
       "name": "CW Billable Post 8hrs"
@@ -87,7 +79,7 @@
       "typeVersion": 2,
       "position": [
         -480,
-        -432
+        -416
       ],
       "id": "c34ccf15-7d2d-4114-bb82-959d19f28175",
       "name": "Set Current Date and Time GMT -7"
@@ -100,7 +92,7 @@
       "typeVersion": 2,
       "position": [
         -480,
-        112
+        96
       ],
       "id": "89a3792f-a454-4420-81c5-16cb23bcfe16",
       "name": "schedule/shift version"
@@ -130,7 +122,7 @@
       "typeVersion": 3.4,
       "position": [
         -480,
-        -256
+        -240
       ],
       "id": "e581b2c1-6c4b-4f1f-8113-62eb5ad24dc2",
       "name": "SOC Roster"
@@ -140,8 +132,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -944,
-        -160
+        -928,
+        -176
       ],
       "id": "0fd8ba9c-d131-4b7d-9997-6023574b98c8",
       "name": "When clicking 'Execute workflow'"
@@ -156,7 +148,7 @@
       "typeVersion": 3.2,
       "position": [
         -288,
-        -352
+        -336
       ],
       "id": "c8b77248-ba24-4c22-8458-8d7ade2a7dc4",
       "name": "Merge"
@@ -171,7 +163,7 @@
       "typeVersion": 3.2,
       "position": [
         -288,
-        16
+        0
       ],
       "id": "9c093e79-3e84-4acc-8f32-51120b6f9346",
       "name": "Merge1"
@@ -185,7 +177,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        -48,
+        -64,
         -176
       ],
       "id": "e8579a13-295e-4637-9d86-f6c973e2d126",
@@ -218,8 +210,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        512,
-        -192
+        672,
+        -176
       ],
       "id": "1836f4bd-f4f5-4d55-a4be-dbf02a4bbccf",
       "name": "If"
@@ -232,7 +224,7 @@
       "typeVersion": 2,
       "position": [
         -480,
-        -592
+        -560
       ],
       "id": "795aff23-eacf-4d3d-b3d7-71716f15fa72",
       "name": "Billing Mapper"
@@ -259,24 +251,52 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        640,
-        -384
+        864,
+        -256
       ],
       "id": "00972c78-21db-490e-90e6-a871374590db",
       "name": "Code in JavaScript"
     },
     {
       "parameters": {
-        "jsCode": "// Parse Phoenix shift start to a UTC Date object (Phoenix = UTC-7, no DST)\nfunction parseShiftStart(dateStr, localStartHHMM) {\n  const [year, month, day] = dateStr.split('-').map(Number);\n  const [startHour, startMinute] = localStartHHMM.split(':').map(Number);\n  if (![year, month, day, startHour, startMinute].every(Number.isFinite)) {\n    throw new Error(`Invalid date/time: date=${dateStr}, shiftStart=${localStartHHMM}`);\n  }\n  return new Date(Date.UTC(year, month - 1, day, startHour + 7, startMinute, 0));\n}\n\n// Add hours to a UTC Date and return a new Date\nfunction addHours(utcDate, hours) {\n  return new Date(utcDate.getTime() + hours * 3600000);\n}\n\n// Format a Date to ConnectWise-style ISO 8601 string\nfunction isoZ(d) {\n  return d.toISOString().replace('.000Z', 'Z');\n}\n\n// Sequential day-based rotation — guarantees every customer is hit within\n// one full cycle (modulo days). Each member gets a fixed starting offset\n// derived from their ID so analysts stagger through their lists independently.\nfunction customerOffset(date, memberKey, modulo) {\n  if (!modulo || modulo < 1) return 0;\n  const epochDay = Math.floor(new Date(`${date}T00:00:00Z`).getTime() / 86400000);\n  const memberSeed = Math.abs(parseInt(memberKey, 10) || 0) % modulo;\n  return (epochDay + memberSeed) % modulo;\n}\n\n// Shared CW flags — same on every time entry\nconst CW_FLAGS = {\n  addToDetailDescriptionFlag: false,\n  addToInternalAnalysisFlag: false,\n  addToResolutionFlag: false,\n};\n\n// Build the CW time entry body\nfunction makeBody({ analyst, companyId, timeStart, timeEnd, actualHours, billableOption, notes, chargeToType, chargeToId }) {\n  const body = {\n    company: { id: companyId },\n    chargeToType,\n    member: { id: analyst.memberId },\n    locationId: analyst.locationId,\n    businessUnitId: analyst.businessUnitId,\n    workType: { id: analyst.workTypeId },\n    workRole: { id: analyst.workRoleId },\n    timeStart,\n    timeEnd,\n    actualHours,\n    billableOption,\n    notes,\n    ...CW_FLAGS,\n  };\n  if (chargeToId !== undefined && chargeToId !== null) body.chargeToId = chargeToId;\n  return body;\n}\n\n// Build the n8n output item wrapper\nfunction makeEntry(analyst, type, clientCompanyId, clientName, body) {\n  return {\n    json: {\n      memberId: analyst.memberId,\n      name: analyst.name,\n      identifier: analyst.identifier,\n      weekday: analyst.weekday,\n      shiftName: analyst.shiftName,\n      type,\n      clientCompanyId,\n      clientName,\n      body,\n    },\n  };\n}\n\n// ── Input parsing ─────────────────────────────────────────────────────────────\n\nconst config = $json;\n\nconst date = config.date;\nconst roster = Array.isArray(config.members) ? config.members : [];\nconst shifts = Array.isArray(config.shifts) ? config.shifts : [];\nconst customers = Array.isArray(config.customers) ? config.customers.filter(c => c && c.billable) : [];\nconst dailyHours = config.dailyHours || { billable: 8, admin: 2 };\n\nif (!date) throw new Error('Missing top-level date');\nif (!roster.length) throw new Error('No roster members found');\nif (!shifts.length) throw new Error('No shifts found');\nif (!customers.length) throw new Error('No billable customers found');\n\nconst weekday = new Intl.DateTimeFormat('en-US', {\n  timeZone: 'America/Phoenix',\n  weekday: 'short',\n}).format(new Date(`${date}T12:00:00Z`));\n\nconst rosterById = Object.fromEntries(roster.map(m => [String(m.memberId), m]));\nconst customerById = Object.fromEntries(customers.map(c => [String(c.companyId), c]));\n\n// Pre-convert billing map IDs to strings once — they're static per run\nconst rawBillingMap = config.allowedBillingMap || {};\nconst allowedBillingMap = Object.fromEntries(\n  Object.entries(rawBillingMap).map(([id, ids]) => [id, Array.isArray(ids) ? ids.map(String) : []])\n);\n\n// ── Build today's schedule ────────────────────────────────────────────────────\n\nconst scheduled = [];\nfor (const shift of shifts) {\n  for (const sm of (shift.members || [])) {\n    if (!Array.isArray(sm.days) || !sm.days.includes(weekday)) continue;\n    const m = rosterById[String(sm.memberId)] || sm;\n    scheduled.push({\n      date,\n      weekday,\n      shiftName: shift.name,\n      shiftStart: shift.start,\n      memberId: m.memberId,\n      identifier: m.identifier,\n      name: m.name,\n      workRoleId: m.workRoleId,\n      workTypeId: m.workTypeId ?? config.workTypeId,\n      locationId: m.locationId ?? config.locationId,\n      businessUnitId: config.businessUnitId,\n      chargeToType: config.chargeToType,\n      chargeToId: config.chargeToId,\n      internalCompanyId: config.companyId,\n      dailyBillable: Number(m.dailyBillable ?? dailyHours.billable),\n      dailyAdmin: Number(m.dailyAdmin ?? dailyHours.admin),\n    });\n  }\n}\n\nif (!scheduled.length) return [];\n\n// Stable sort — precompute keys to avoid repeated OR-chain evaluation\nscheduled.sort((a, b) => {\n  const ka = a.identifier || a.name || String(a.memberId);\n  const kb = b.identifier || b.name || String(b.memberId);\n  return ka.localeCompare(kb);\n});\n\n// ── Generate CW time entries ──────────────────────────────────────────────────\n\nconst results = [];\n\nfor (const analyst of scheduled) {\n  const memberKey = String(analyst.memberId);\n  const allowedCustomers = (allowedBillingMap[memberKey] || [])\n    .map(id => customerById[id])\n    .filter(Boolean);\n\n  const billableHours = analyst.dailyBillable;\n  const adminHours = analyst.dailyAdmin;\n  const shiftStart = parseShiftStart(analyst.date, analyst.shiftStart);\n  const billableEnd = addHours(shiftStart, billableHours);\n\n  if (allowedCustomers.length > 0 && billableHours > 0) {\n    const client = allowedCustomers[customerOffset(date, memberKey, allowedCustomers.length)];\n\n    // Billable: assigned customer for today\n    // chargeToType/chargeToId stay as ChargeCode/35 — CW uses billableOption:'Billable'\n    // to mark the entry as client-billable; company.id associates it with the customer\n    results.push(makeEntry(\n      analyst, 'billable', client.companyId, client.name,\n      makeBody({ analyst, companyId: client.companyId, timeStart: isoZ(shiftStart), timeEnd: isoZ(billableEnd),\n        actualHours: billableHours, billableOption: 'Billable', notes: `${analyst.shiftName} shift SOC coverage`,\n        chargeToType: analyst.chargeToType || 'ChargeCode', chargeToId: analyst.chargeToId })\n    ));\n\n    // Admin: DoNotBill block immediately after billable shift — internal charge code\n    if (adminHours > 0) {\n      const adminEnd = addHours(billableEnd, adminHours);\n      results.push(makeEntry(\n        analyst, 'admin', analyst.internalCompanyId, 'Internal Admin',\n        makeBody({ analyst, companyId: analyst.internalCompanyId, timeStart: isoZ(billableEnd), timeEnd: isoZ(adminEnd),\n          actualHours: adminHours, billableOption: 'DoNotBill', notes: `${analyst.shiftName} shift admin`,\n          chargeToType: analyst.chargeToType || 'ChargeCode', chargeToId: analyst.chargeToId })\n      ));\n    }\n  } else {\n    // No billing map entry: log full shift to internal company as DoNotBill\n    const fullEnd = adminHours > 0 ? addHours(shiftStart, billableHours + adminHours) : billableEnd;\n    results.push(makeEntry(\n      analyst, 'admin', analyst.internalCompanyId, 'Internal Admin',\n      makeBody({ analyst, companyId: analyst.internalCompanyId, timeStart: isoZ(shiftStart), timeEnd: isoZ(fullEnd),\n        actualHours: billableHours + adminHours, billableOption: 'DoNotBill', notes: `${analyst.shiftName} shift internal SOC coverage`,\n        chargeToType: analyst.chargeToType || 'ChargeCode', chargeToId: analyst.chargeToId })\n    ));\n  }\n}\n\nreturn results;"
+        "jsCode": "function toUtcRange(dateStr, localStartHHMM, hours) {\n  if (!dateStr) throw new Error('Missing date');\n  if (!localStartHHMM) throw new Error('Missing shift start');\n  if (hours === undefined || hours === null || Number.isNaN(Number(hours))) {\n    throw new Error('Missing or invalid hours');\n  }\n\n  const [year, month, day] = String(dateStr).split('-').map(Number);\n  const [startHour, startMinute] = String(localStartHHMM).split(':').map(Number);\n\n  if (![year, month, day, startHour, startMinute].every(Number.isFinite)) {\n    throw new Error(`Invalid date/time. date=${dateStr}, shiftStart=${localStartHHMM}`);\n  }\n\n  // Phoenix is UTC-7 year-round\n  const startUtc = new Date(Date.UTC(year, month - 1, day, startHour + 7, startMinute, 0));\n  const endUtc = new Date(startUtc.getTime() + Number(hours) * 60 * 60 * 1000);\n\n  return {\n    start: startUtc.toISOString().replace('.000Z', 'Z'),\n    end: endUtc.toISOString().replace('.000Z', 'Z'),\n  };\n}\n\n// Sequential day-based rotation — guarantees every customer is hit within\n// one full cycle (modulo days). Each member gets a fixed starting offset\n// derived from their ID so analysts stagger through their lists independently.\nfunction customerOffset(date, memberKey, modulo) {\n  if (!modulo || modulo < 1) return 0;\n  const epochDay = Math.floor(new Date(`${date}T00:00:00Z`).getTime() / 86400000);\n  const memberSeed = Math.abs(parseInt(memberKey, 10) || 0) % modulo;\n  return (epochDay + memberSeed) % modulo;\n}\n\nconst config = $json;\n\nconst date = config.date;\nconst roster = Array.isArray(config.members) ? config.members : [];\nconst shifts = Array.isArray(config.shifts) ? config.shifts : [];\nconst customers = Array.isArray(config.customers) ? config.customers.filter(c => c && c.billable) : [];\nconst dailyHours = config.dailyHours || { billable: 8, admin: 2 };\nconst allowedBillingMap = config.allowedBillingMap || {};\nconst agreementMap = config.agreementMap || {};\n\nif (!date) throw new Error('Missing top-level date');\nif (!roster.length) throw new Error('No roster members found');\nif (!shifts.length) throw new Error('No shifts found');\nif (!customers.length) throw new Error('No billable customers found');\n\nconst weekday = new Intl.DateTimeFormat('en-US', {\n  timeZone: 'America/Phoenix',\n  weekday: 'short'\n}).format(new Date(`${date}T12:00:00Z`));\n\nconst rosterById = Object.fromEntries(\n  roster.map(member => [String(member.memberId), member])\n);\n\nconst customerById = Object.fromEntries(\n  customers.map(customer => [String(customer.companyId), customer])\n);\n\nconst scheduled = [];\n\nfor (const shift of shifts) {\n  for (const shiftMember of (shift.members || [])) {\n    const worksToday = Array.isArray(shiftMember.days) && shiftMember.days.includes(weekday);\n    if (!worksToday) continue;\n\n    const fullMember = rosterById[String(shiftMember.memberId)] || shiftMember;\n\n    scheduled.push({\n      date,\n      weekday,\n      shiftName: shift.name,\n      shiftStart: shift.start,\n      shiftEnd: shift.end,\n      memberId: fullMember.memberId,\n      identifier: fullMember.identifier,\n      name: fullMember.name,\n      title: fullMember.title || null,\n      workRoleId: fullMember.workRoleId,\n      workTypeId: fullMember.workTypeId ?? config.workTypeId,\n      locationId: fullMember.locationId ?? config.locationId,\n      businessUnitId: config.businessUnitId,\n      chargeToType: config.chargeToType,\n      chargeToId: config.chargeToId,\n      internalCompanyId: config.companyId,\n      dailyBillable: Number(fullMember.dailyBillable ?? dailyHours.billable),\n      dailyAdmin: Number(fullMember.dailyAdmin ?? dailyHours.admin),\n    });\n  }\n}\n\nif (!scheduled.length) {\n  return [];\n}\n\nscheduled.sort((a, b) =>\n  String(a.identifier || a.name || a.memberId).localeCompare(\n    String(b.identifier || b.name || b.memberId)\n  )\n);\n\nconst results = [];\n\nfor (const analyst of scheduled) {\n  const memberKey = String(analyst.memberId);\n  const allowedCompanyIds = Array.isArray(allowedBillingMap[memberKey])\n    ? allowedBillingMap[memberKey].map(id => String(id))\n    : [];\n\n  const allowedCustomers = allowedCompanyIds\n    .map(id => customerById[id])\n    .filter(Boolean);\n\n  const billableHours = analyst.dailyBillable;\n  const adminHours = analyst.dailyAdmin;\n\n  const billableRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours);\n  const fullRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours + adminHours);\n\n  if (allowedCustomers.length > 0 && billableHours > 0) {\n    const offset = customerOffset(date, memberKey, allowedCustomers.length);\n    const client = allowedCustomers[offset];\n    const agreementId = agreementMap[String(client.companyId)] || null;\n\n    const billableBody = {\n      company: { id: client.companyId },\n      chargeToType: 'Company',\n      member: { id: analyst.memberId },\n      locationId: analyst.locationId,\n      businessUnitId: analyst.businessUnitId,\n      workType: { id: analyst.workTypeId },\n      workRole: { id: analyst.workRoleId },\n      timeStart: billableRange.start,\n      timeEnd: billableRange.end,\n      actualHours: billableHours,\n      billableOption: 'Billable',\n      notes: `${analyst.shiftName} shift SOC coverage`,\n      addToDetailDescriptionFlag: false,\n      addToInternalAnalysisFlag: false,\n      addToResolutionFlag: false,\n    };\n\n    if (agreementId) {\n      billableBody.agreement = { id: agreementId };\n    }\n\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'billable',\n        clientCompanyId: client.companyId,\n        clientName: client.name,\n        agreementId,\n        body: billableBody,\n      },\n    });\n  } else {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        agreementId: null,\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.start,\n          timeEnd: fullRange.end,\n          actualHours: billableHours + adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift internal SOC coverage`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n\n    continue;\n  }\n\n  if (adminHours > 0) {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        agreementId: null,\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.end,\n          timeEnd: fullRange.end,\n          actualHours: adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift admin`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n  }\n}\n\nreturn results;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        -192
+        512,
+        -176
       ],
       "id": "57cbb118-b66e-4658-810c-4cdb6ea0f483",
       "name": "CW Payload"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agreementMap: {\n        \"23380\": 937,\n        \"27273\": 907,\n        \"28075\": 795,\n        \"23530\": 978,\n        \"26401\": 734,\n        \"32589\": 998,\n        \"23474\": 796,\n        \"32051\": 662,\n        \"21553\": 757,\n        \"32608\": 988\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        256
+      ],
+      "id": "6dba44a0-6e32-4059-af43-5190a9c840f4",
+      "name": "Agreement IDs By Customer"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        352,
+        -176
+      ],
+      "id": "3bd261d1-95a5-48ac-94de-c526e8d62eb9",
+      "name": "Merge4"
     }
   ],
   "connections": {
@@ -361,6 +381,11 @@
             "node": "Billing Mapper",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Agreement IDs By Customer",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -431,7 +456,7 @@
       "main": [
         [
           {
-            "node": "CW Payload",
+            "node": "Merge4",
             "type": "main",
             "index": 0
           }
@@ -454,6 +479,28 @@
         [
           {
             "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agreement IDs By Customer": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "CW Payload",
             "type": "main",
             "index": 0
           }
