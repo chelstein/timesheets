@@ -30,8 +30,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        256,
-        -240
+        800,
+        -96
       ],
       "id": "9444a585-3d91-4053-8e95-d0b610975a0e",
       "name": "CW NON-Billable Post 2hrs"
@@ -65,8 +65,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        256,
-        -32
+        800,
+        -272
       ],
       "id": "735b6ef8-fea9-4406-a247-7d6c9be98c46",
       "name": "CW Billable Post 8hrs"
@@ -79,39 +79,10 @@
       "typeVersion": 2,
       "position": [
         -480,
-        -464
+        -432
       ],
       "id": "c34ccf15-7d2d-4114-bb82-959d19f28175",
       "name": "Set Current Date and Time GMT -7"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $json.data;\n\n// Extract each data source from the Aggregate output\nconst dateItem    = data.find(d => d.date      !== undefined);\nconst rosterItem  = data.find(d => d.members   !== undefined);\nconst clientsItem = data.find(d => d.customers !== undefined);\nconst shiftItem   = data.find(d => d.shifts    !== undefined);\n\nconst date = dateItem.date;\n\n// Determine day of week for the Arizona date string\nconst dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];\nconst dayOfWeek = dayNames[new Date(`${date}T12:00:00Z`).getDay()];\n\n// Convert Arizona HH:MM (UTC-7, no DST) to a UTC ISO datetime string.\n// nextDay=true when the endpoint crosses into the following AZ calendar day.\nfunction azToUTC(azHHMM, baseDate, nextDay = false) {\n  const [h, m] = azHHMM.split(':').map(Number);\n  const utcH = h + 7;\n  const d = new Date(`${baseDate}T00:00:00Z`);\n  if (nextDay) d.setUTCDate(d.getUTCDate() + 1);\n  d.setUTCHours(utcH % 24, m, 0, 0);\n  if (utcH >= 24) d.setUTCDate(d.getUTCDate() + 1);\n  return d.toISOString().replace('.000Z', 'Z');\n}\n\n// Map member ID → their shift\nconst memberShiftMap = {};\nfor (const shift of shiftItem.shifts) {\n  for (const sm of shift.members) {\n    memberShiftMap[sm.memberId] = shift;\n  }\n}\n\n// Members scheduled to work today\nconst workingMembers = rosterItem.members.filter(m =>\n  m.active && m.days.includes(dayOfWeek)\n);\n\n// Only bill to customers flagged as billable (shared SOC pool recipients)\nconst billableCustomers = clientsItem.customers.filter(c => c.billable);\n\nconst entries = [];\n\nfor (const member of workingMembers) {\n  const shift = memberShiftMap[member.memberId];\n\n  // Resolve shift window in UTC; overnight = shift ends before it starts (e.g. \"00:00\" < \"14:00\")\n  let timeStart, timeEnd;\n  if (shift) {\n    const overnight = shift.end < shift.start;\n    timeStart = azToUTC(shift.start, date);\n    timeEnd   = azToUTC(shift.end,   date, overnight);\n  } else {\n    timeStart = `${date}T15:00:00Z`;\n    timeEnd   = `${date}T23:00:00Z`;\n  }\n\n  // Shared pool model: each member's billable hours split equally across all billable customers\n  const hoursPerCustomer = parseFloat((member.dailyBillable / billableCustomers.length).toFixed(4));\n\n  for (const customer of billableCustomers) {\n    entries.push({\n      json: {\n        body: {\n          company:        { id: customer.companyId },\n          chargeToType:   rosterItem.chargeToType,\n          chargeToId:     rosterItem.chargeToId,\n          member:         { id: member.memberId },\n          locationId:     rosterItem.locationId,\n          businessUnitId: rosterItem.businessUnitId,\n          workType:       { id: rosterItem.workTypeId },\n          workRole:       { id: member.workRoleId },\n          timeStart,\n          timeEnd,\n          actualHours:    hoursPerCustomer,\n          billableOption: 'Billable',\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag:  false,\n          addToResolutionFlag:        false\n        }\n      }\n    });\n  }\n\n  // Non-billable admin entry: member.dailyAdmin hours posted to internal company\n  const adminEnd = (() => {\n    const d = new Date(timeEnd);\n    d.setUTCHours(d.getUTCHours() + member.dailyAdmin);\n    return d.toISOString().replace('.000Z', 'Z');\n  })();\n\n  entries.push({\n    json: {\n      body: {\n        company:        { id: rosterItem.companyId },\n        chargeToType:   rosterItem.chargeToType,\n        chargeToId:     rosterItem.chargeToId,\n        member:         { id: member.memberId },\n        locationId:     rosterItem.locationId,\n        businessUnitId: rosterItem.businessUnitId,\n        workType:       { id: rosterItem.workTypeId },\n        workRole:       { id: member.workRoleId },\n        timeStart:      timeEnd,\n        timeEnd:        adminEnd,\n        actualHours:    member.dailyAdmin,\n        billableOption: 'DoNotBill',\n        addToDetailDescriptionFlag: false,\n        addToInternalAnalysisFlag:  false,\n        addToResolutionFlag:        false\n      }\n    }\n  });\n}\n\nreturn entries;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        48,
-        -128
-      ],
-      "id": "b7e6c8c7-0808-4125-80b2-f4f638900b3d",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "content": "",
-        "height": 400,
-        "width": 912,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -496,
-        -288
-      ],
-      "id": "1344df01-a57b-45ae-a80b-da452a26b9a8",
-      "name": "Sticky Note"
     },
     {
       "parameters": {
@@ -121,7 +92,7 @@
       "typeVersion": 2,
       "position": [
         -480,
-        144
+        112
       ],
       "id": "89a3792f-a454-4420-81c5-16cb23bcfe16",
       "name": "schedule/shift version"
@@ -136,7 +107,7 @@
       "typeVersion": 3.4,
       "position": [
         -480,
-        -64
+        -80
       ],
       "id": "1b489c68-0740-4cf1-890c-7f7f90b597be",
       "name": "SOC Clients"
@@ -151,35 +122,153 @@
       "typeVersion": 3.4,
       "position": [
         -480,
-        -272
+        -256
       ],
       "id": "e581b2c1-6c4b-4f1f-8113-62eb5ad24dc2",
       "name": "SOC Roster"
-    },
-    {
-      "parameters": {
-        "aggregate": "aggregateAllItemData",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [
-        -112,
-        -128
-      ],
-      "id": "dd871585-a3ab-47dd-9e47-e37046af4b87",
-      "name": "Aggregate"
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -864,
-        -144
+        -944,
+        -160
       ],
       "id": "0fd8ba9c-d131-4b7d-9997-6023574b98c8",
       "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        -352
+      ],
+      "id": "c8b77248-ba24-4c22-8458-8d7ade2a7dc4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        16
+      ],
+      "id": "9c093e79-3e84-4acc-8f32-51120b6f9346",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -48,
+        -176
+      ],
+      "id": "e8579a13-295e-4637-9d86-f6c973e2d126",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "044ddab7-d903-457d-bdb8-c7e146694dfa",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "=billable",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        -192
+      ],
+      "id": "1836f4bd-f4f5-4d55-a4be-dbf02a4bbccf",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      allowedBillingMap: {\n        \"511\": [26401, 27273, 23380, 23474],\n        \"913\": [32589, 21553, 32608],\n        \"800\": [32589, 21553, 32608],\n        \"802\": [28075, 23530],\n        \"952\": [28075, 23530]\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -592
+      ],
+      "id": "795aff23-eacf-4d3d-b3d7-71716f15fa72",
+      "name": "Billing Mapper"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        176,
+        -192
+      ],
+      "id": "657c256f-9629-48ef-9604-d56f3d7c4001",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      memberId: item.json.memberId,\n      memberName: item.json.name,\n      clientCompanyId: item.json.clientCompanyId,\n      clientName: item.json.clientName,\n      body: item.json.body\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -384
+      ],
+      "id": "00972c78-21db-490e-90e6-a871374590db",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "function toUtcRange(dateStr, localStartHHMM, hours) {\n  if (!dateStr) throw new Error('Missing date');\n  if (!localStartHHMM) throw new Error('Missing shift start');\n  if (hours === undefined || hours === null || Number.isNaN(Number(hours))) {\n    throw new Error('Missing or invalid hours');\n  }\n\n  const [year, month, day] = String(dateStr).split('-').map(Number);\n  const [startHour, startMinute] = String(localStartHHMM).split(':').map(Number);\n\n  if (![year, month, day, startHour, startMinute].every(Number.isFinite)) {\n    throw new Error(`Invalid date/time. date=${dateStr}, shiftStart=${localStartHHMM}`);\n  }\n\n  // Phoenix is UTC-7 year-round\n  const startUtc = new Date(Date.UTC(year, month - 1, day, startHour + 7, startMinute, 0));\n  const endUtc = new Date(startUtc.getTime() + Number(hours) * 60 * 60 * 1000);\n\n  return {\n    start: startUtc.toISOString().replace('.000Z', 'Z'),\n    end: endUtc.toISOString().replace('.000Z', 'Z'),\n  };\n}\n\nfunction buildDeterministicOffset(seed, modulo) {\n  if (!modulo || modulo < 1) return 0;\n  let hash = 0;\n  const str = String(seed);\n  for (let i = 0; i < str.length; i++) {\n    hash = ((hash << 5) - hash) + str.charCodeAt(i);\n    hash |= 0;\n  }\n  return Math.abs(hash) % modulo;\n}\n\nconst config = $json;\n\nconst date = config.date;\nconst roster = Array.isArray(config.members) ? config.members : [];\nconst shifts = Array.isArray(config.shifts) ? config.shifts : [];\nconst customers = Array.isArray(config.customers) ? config.customers.filter(c => c && c.billable) : [];\nconst dailyHours = config.dailyHours || { billable: 8, admin: 2 };\nconst allowedBillingMap = config.allowedBillingMap || {};\n\nif (!date) throw new Error('Missing top-level date');\nif (!roster.length) throw new Error('No roster members found');\nif (!shifts.length) throw new Error('No shifts found');\nif (!customers.length) throw new Error('No billable customers found');\n\nconst weekday = new Intl.DateTimeFormat('en-US', {\n  timeZone: 'America/Phoenix',\n  weekday: 'short'\n}).format(new Date(`${date}T12:00:00Z`));\n\nconst rosterById = Object.fromEntries(\n  roster.map(member => [String(member.memberId), member])\n);\n\nconst customerById = Object.fromEntries(\n  customers.map(customer => [String(customer.companyId), customer])\n);\n\nconst scheduled = [];\n\nfor (const shift of shifts) {\n  for (const shiftMember of (shift.members || [])) {\n    const worksToday = Array.isArray(shiftMember.days) && shiftMember.days.includes(weekday);\n    if (!worksToday) continue;\n\n    const fullMember = rosterById[String(shiftMember.memberId)] || shiftMember;\n\n    scheduled.push({\n      date,\n      weekday,\n      shiftName: shift.name,\n      shiftStart: shift.start,\n      shiftEnd: shift.end,\n      memberId: fullMember.memberId,\n      identifier: fullMember.identifier,\n      name: fullMember.name,\n      title: fullMember.title || null,\n      workRoleId: fullMember.workRoleId,\n      workTypeId: fullMember.workTypeId ?? config.workTypeId,\n      locationId: fullMember.locationId ?? config.locationId,\n      businessUnitId: config.businessUnitId,\n      chargeToType: config.chargeToType,\n      chargeToId: config.chargeToId,\n      internalCompanyId: config.companyId,\n      dailyBillable: Number(fullMember.dailyBillable ?? dailyHours.billable),\n      dailyAdmin: Number(fullMember.dailyAdmin ?? dailyHours.admin),\n    });\n  }\n}\n\nif (!scheduled.length) {\n  return [];\n}\n\nscheduled.sort((a, b) =>\n  String(a.identifier || a.name || a.memberId).localeCompare(\n    String(b.identifier || b.name || b.memberId)\n  )\n);\n\nconst results = [];\n\nfor (const analyst of scheduled) {\n  const memberKey = String(analyst.memberId);\n  const allowedCompanyIds = Array.isArray(allowedBillingMap[memberKey])\n    ? allowedBillingMap[memberKey].map(id => String(id))\n    : [];\n\n  const allowedCustomers = allowedCompanyIds\n    .map(id => customerById[id])\n    .filter(Boolean);\n\n  const billableHours = analyst.dailyBillable;\n  const adminHours = analyst.dailyAdmin;\n\n  const billableRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours);\n  const fullRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours + adminHours);\n\n  if (allowedCustomers.length > 0 && billableHours > 0) {\n    const offset = buildDeterministicOffset(`${date}-${memberKey}`, allowedCustomers.length);\n    const client = allowedCustomers[offset];\n\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'billable',\n        clientCompanyId: client.companyId,\n        clientName: client.name,\n        body: {\n          company: { id: client.companyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.start,\n          timeEnd: billableRange.end,\n          actualHours: billableHours,\n          billableOption: 'Billable',\n          notes: `${analyst.shiftName} shift SOC coverage`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n  } else {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.start,\n          timeEnd: fullRange.end,\n          actualHours: billableHours + adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift internal SOC coverage`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n\n    continue;\n  }\n\n  if (adminHours > 0) {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.end,\n          timeEnd: fullRange.end,\n          actualHours: adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift admin`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -192
+      ],
+      "id": "57cbb118-b66e-4658-810c-4cdb6ea0f483",
+      "name": "CW Payload"
     }
   ],
   "connections": {
@@ -188,22 +277,16 @@
         []
       ]
     },
+    "CW Billable Post 8hrs": {
+      "main": [
+        []
+      ]
+    },
     "Set Current Date and Time GMT -7": {
       "main": [
         [
           {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "CW Billable Post 8hrs",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
@@ -214,9 +297,9 @@
       "main": [
         [
           {
-            "node": "Aggregate",
+            "node": "Merge1",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -225,7 +308,7 @@
       "main": [
         [
           {
-            "node": "Aggregate",
+            "node": "Merge1",
             "type": "main",
             "index": 0
           }
@@ -236,20 +319,9 @@
       "main": [
         [
           {
-            "node": "Aggregate",
+            "node": "Merge",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aggregate": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -274,6 +346,106 @@
           },
           {
             "node": "schedule/shift version",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Billing Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CW NON-Billable Post 2hrs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing Mapper": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "CW Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "CW Billable Post 8hrs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CW Payload": {
+      "main": [
+        [
+          {
+            "node": "If",
             "type": "main",
             "index": 0
           }
