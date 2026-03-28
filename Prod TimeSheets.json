@@ -24,14 +24,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"2026-03-13T23:00:00Z\",\n  \"timeEnd\": \"2026-03-14T01:00:00Z\",\n  \"actualHours\": 2,\n  \"billableOption\": \"DoNotBill\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
+        "jsonBody": "={{ $json.body }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -16,
-        0
+        960,
+        -96
       ],
       "id": "9444a585-3d91-4053-8e95-d0b610975a0e",
       "name": "CW NON-Billable Post 2hrs"
@@ -59,60 +59,404 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"company\": { \"id\": 23797 },\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"member\": { \"id\": 947 },\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workType\": { \"id\": 126 },\n  \"workRole\": { \"id\": 141 },\n  \"timeStart\": \"={{ $json.date + 'T15:00:00Z' }}\"\n  \"timeEnd\": \"={{ $json.date + 'T23:00:00Z' }}\",\n  \"actualHours\": 8,\n  \"billableOption\": \"Billable\",\n  \"addToDetailDescriptionFlag\": false,\n  \"addToInternalAnalysisFlag\": false,\n  \"addToResolutionFlag\": false\n}",
+        "jsonBody": "={{ $json.body }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        0,
-        -208
+        1056,
+        -256
       ],
       "id": "735b6ef8-fea9-4406-a247-7d6c9be98c46",
       "name": "CW Billable Post 8hrs"
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 0 18 * * 1-5"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        -416,
-        -80
-      ],
-      "id": "31f606d9-b7f0-4d40-8919-efff1b33a992",
-      "name": "Schedule Trigger",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const now = new Date();\n\nconst arizona = new Date(\n  now.toLocaleString(\"en-US\", { timeZone: \"America/Phoenix\" })\n);\n\nreturn [\n  {\n    json: {\n      timezone: \"GMT-7\",\n      iso: arizona.toISOString(),\n      date: arizona.toISOString().split(\"T\")[0],\n      time: arizona.toTimeString().split(\" \")[0],\n      year: arizona.getFullYear(),\n      month: arizona.getMonth() + 1,\n      day: arizona.getDate(),\n      hour: arizona.getHours(),\n      minute: arizona.getMinutes(),\n      second: arizona.getSeconds()\n    }\n  }\n];"
+        "jsCode": "const formatter = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'America/Phoenix',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n});\n\nconst parts = formatter.formatToParts(new Date());\nconst year = parts.find(p => p.type === 'year').value;\nconst month = parts.find(p => p.type === 'month').value;\nconst day = parts.find(p => p.type === 'day').value;\n\nconst date = `${year}-${month}-${day}`;\n\nreturn [{\n  json: {\n    timezone: 'America/Phoenix',\n    date\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -256,
-        -80
+        -480,
+        -416
       ],
       "id": "c34ccf15-7d2d-4114-bb82-959d19f28175",
+      "name": "Set Current Date and Time GMT -7"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      team: \"SOC\",\n      companyId: 23797,\n      chargeToType: \"ChargeCode\",\n      chargeToId: 35,\n      locationId: 11,\n      businessUnitId: 11,\n      workTypeId: 126,\n      shifts: [\n        {\n          name: \"1st\",\n          start: \"07:00\",\n          end: \"17:00\",\n          members: [\n            { memberId: 913, identifier: \"ASchwartz\", name: \"Adam Schwartz\", days: [\"Sun\",\"Mon\",\"Tue\",\"Wed\"], workRoleId: 139 },\n            { memberId: 800, identifier: \"LPrice\", name: \"Lawonda Price\", days: [\"Sun\",\"Mon\",\"Tue\",\"Wed\"], workRoleId: 139 },\n            { memberId: 802, identifier: \"JGoff-Foster\", name: \"Jonathan Goff-Foster\", days: [\"Wed\",\"Thu\",\"Fri\",\"Sat\"], workRoleId: 139 },\n            { memberId: 952, identifier: \"RThompson\", name: \"Ryan Thompson\", days: [\"Wed\",\"Thu\",\"Fri\",\"Sat\"], workRoleId: 139 },\n            { memberId: 553, identifier: \"mswain\", name: \"Michael Swain\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\"], workRoleId: 97 },\n            { memberId: 947, identifier: \"chelstein\", name: \"Chuck Helstein\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\"], workRoleId: 141 }\n          ]\n        },\n        {\n          name: \"2nd\",\n          start: \"14:00\",\n          end: \"00:00\",\n          members: [\n            { memberId: 511, identifier: \"ecollier\", name: \"Ethan Collier\", days: [\"Mon\",\"Tue\",\"Wed\",\"Thu\"], workRoleId: 141 }\n          ]\n        },\n        {\n          name: \"3rd\",\n          start: \"22:00\",\n          end: \"08:00\",\n          members: [\n            { memberId: 911, identifier: \"BAfilal\", name: \"Badr Afilal\", days: [\"Tue\",\"Wed\",\"Thu\",\"Fri\"], workRoleId: 102 },\n            { memberId: 915, identifier: \"MDghoughi\", name: \"Marouane Dghoughi\", days: [\"Sat\",\"Sun\",\"Mon\",\"Tue\"], workRoleId: 139 }\n          ]\n        }\n      ],\n      dailyHours: {\n        billable: 8,\n        admin: 2\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        96
+      ],
+      "id": "89a3792f-a454-4420-81c5-16cb23bcfe16",
+      "name": "schedule/shift version"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"customers\": [\n    {\n      \"companyId\": 26401,\n      \"identifier\": \"TOW\",\n      \"name\": \"Town of Wickenburg\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 27273,\n      \"identifier\": \"GCON\",\n      \"name\": \"GCON\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32589,\n      \"identifier\": \"SPN\",\n      \"name\": \"Spinato's Pizza\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23380,\n      \"identifier\": \"OW\",\n      \"name\": \"Openworks\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23474,\n      \"identifier\": \"Spear_GMI\",\n      \"name\": \"Spear Education\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 21553,\n      \"identifier\": \"LP_GMI\",\n      \"name\": \"LeadPoint USA\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32608,\n      \"identifier\": \"OnQGlobal\",\n      \"name\": \"OnQGlobal\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 28075,\n      \"identifier\": \"RIINTL\",\n      \"name\": \"RI International\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 23530,\n      \"identifier\": \"VGCC_GMI\",\n      \"name\": \"Valor Global, LLC\",\n      \"billable\": true\n    },\n    {\n      \"companyId\": 32051,\n      \"identifier\": \"Technology Spa\",\n      \"name\": \"Technology Spa\",\n      \"billable\": true\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -80
+      ],
+      "id": "1b489c68-0740-4cf1-890c-7f7f90b597be",
+      "name": "SOC Clients"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"team\": \"SOC\",\n  \"companyId\": 23797,\n  \"chargeToType\": \"ChargeCode\",\n  \"chargeToId\": 35,\n  \"locationId\": 11,\n  \"businessUnitId\": 11,\n  \"workTypeId\": 126,\n  \"members\": [\n    {\n      \"memberId\": 947,\n      \"identifier\": \"chelstein\",\n      \"name\": \"Chuck Helstein\",\n      \"title\": \"SOC Manager\",\n      \"workRoleId\": 141,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 913,\n      \"identifier\": \"ASchwartz\",\n      \"name\": \"Adam Schwartz\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sun\",\"Mon\",\"Tue\",\"Wed\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 800,\n      \"identifier\": \"LPrice\",\n      \"name\": \"Lawonda Price\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sun\",\"Mon\",\"Tue\",\"Wed\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 802,\n      \"identifier\": \"JGoff-Foster\",\n      \"name\": \"Jonathan Goff-Foster\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Wed\",\"Thu\",\"Fri\",\"Sat\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 952,\n      \"identifier\": \"RThompson\",\n      \"name\": \"Ryan Thompson\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Wed\",\"Thu\",\"Fri\",\"Sat\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 553,\n      \"identifier\": \"mswain\",\n      \"name\": \"Michael Swain\",\n      \"title\": \"L2 Analyst\",\n      \"workRoleId\": 97,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 511,\n      \"identifier\": \"ecollier\",\n      \"name\": \"Ethan Collier\",\n      \"title\": \"SOC Lead\",\n      \"workRoleId\": 141,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Mon\",\"Tue\",\"Wed\",\"Thu\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 911,\n      \"identifier\": \"BAfilal\",\n      \"name\": \"Badr Afilal\",\n      \"title\": \"Pen Tester\",\n      \"workRoleId\": 102,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Tue\",\"Wed\",\"Thu\",\"Fri\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    },\n    {\n      \"memberId\": 915,\n      \"identifier\": \"MDghoughi\",\n      \"name\": \"Marouane Dghoughi\",\n      \"title\": \"L1 Analyst\",\n      \"workRoleId\": 139,\n      \"workTypeId\": 126,\n      \"locationId\": 11,\n      \"departmentId\": 10,\n      \"days\": [\"Sat\",\"Sun\",\"Mon\",\"Tue\"],\n      \"dailyCapacity\": 8,\n      \"minimumHours\": 8,\n      \"dailyBillable\": 8,\n      \"dailyAdmin\": 2,\n      \"active\": true\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -240
+      ],
+      "id": "e581b2c1-6c4b-4f1f-8113-62eb5ad24dc2",
+      "name": "SOC Roster"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -176
+      ],
+      "id": "0fd8ba9c-d131-4b7d-9997-6023574b98c8",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        -336
+      ],
+      "id": "c8b77248-ba24-4c22-8458-8d7ade2a7dc4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        0
+      ],
+      "id": "9c093e79-3e84-4acc-8f32-51120b6f9346",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -64,
+        -176
+      ],
+      "id": "e8579a13-295e-4637-9d86-f6c973e2d126",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "044ddab7-d903-457d-bdb8-c7e146694dfa",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "=billable",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -176
+      ],
+      "id": "1836f4bd-f4f5-4d55-a4be-dbf02a4bbccf",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      allowedBillingMap: {\n        \"511\": [26401, 27273, 23380, 23474],\n        \"913\": [32589, 21553, 32608],\n        \"800\": [32589, 21553, 32608],\n        \"802\": [28075, 23530],\n        \"952\": [28075, 23530]\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -560
+      ],
+      "id": "795aff23-eacf-4d3d-b3d7-71716f15fa72",
+      "name": "Billing Mapper"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        176,
+        -192
+      ],
+      "id": "657c256f-9629-48ef-9604-d56f3d7c4001",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      memberId: item.json.memberId,\n      memberName: item.json.name,\n      clientCompanyId: item.json.clientCompanyId,\n      clientName: item.json.clientName,\n      body: item.json.body\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -256
+      ],
+      "id": "00972c78-21db-490e-90e6-a871374590db",
       "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "function toUtcRange(dateStr, localStartHHMM, hours) {\n  if (!dateStr) throw new Error('Missing date');\n  if (!localStartHHMM) throw new Error('Missing shift start');\n  if (hours === undefined || hours === null || Number.isNaN(Number(hours))) {\n    throw new Error('Missing or invalid hours');\n  }\n\n  const [year, month, day] = String(dateStr).split('-').map(Number);\n  const [startHour, startMinute] = String(localStartHHMM).split(':').map(Number);\n\n  if (![year, month, day, startHour, startMinute].every(Number.isFinite)) {\n    throw new Error(`Invalid date/time. date=${dateStr}, shiftStart=${localStartHHMM}`);\n  }\n\n  // Phoenix is UTC-7 year-round\n  const startUtc = new Date(Date.UTC(year, month - 1, day, startHour + 7, startMinute, 0));\n  const endUtc = new Date(startUtc.getTime() + Number(hours) * 60 * 60 * 1000);\n\n  return {\n    start: startUtc.toISOString().replace('.000Z', 'Z'),\n    end: endUtc.toISOString().replace('.000Z', 'Z'),\n  };\n}\n\n// Sequential day-based rotation — guarantees every customer is hit within\n// one full cycle (modulo days). Each member gets a fixed starting offset\n// derived from their ID so analysts stagger through their lists independently.\nfunction customerOffset(date, memberKey, modulo) {\n  if (!modulo || modulo < 1) return 0;\n  const epochDay = Math.floor(new Date(`${date}T00:00:00Z`).getTime() / 86400000);\n  const memberSeed = Math.abs(parseInt(memberKey, 10) || 0) % modulo;\n  return (epochDay + memberSeed) % modulo;\n}\n\nconst config = $json;\n\nconst date = config.date;\nconst roster = Array.isArray(config.members) ? config.members : [];\nconst shifts = Array.isArray(config.shifts) ? config.shifts : [];\nconst customers = Array.isArray(config.customers) ? config.customers.filter(c => c && c.billable) : [];\nconst dailyHours = config.dailyHours || { billable: 8, admin: 2 };\nconst allowedBillingMap = config.allowedBillingMap || {};\nconst agreementMap = config.agreementMap || {};\n\nif (!date) throw new Error('Missing top-level date');\nif (!roster.length) throw new Error('No roster members found');\nif (!shifts.length) throw new Error('No shifts found');\nif (!customers.length) throw new Error('No billable customers found');\n\nconst weekday = new Intl.DateTimeFormat('en-US', {\n  timeZone: 'America/Phoenix',\n  weekday: 'short'\n}).format(new Date(`${date}T12:00:00Z`));\n\nconst rosterById = Object.fromEntries(\n  roster.map(member => [String(member.memberId), member])\n);\n\nconst customerById = Object.fromEntries(\n  customers.map(customer => [String(customer.companyId), customer])\n);\n\nconst scheduled = [];\n\nfor (const shift of shifts) {\n  for (const shiftMember of (shift.members || [])) {\n    const worksToday = Array.isArray(shiftMember.days) && shiftMember.days.includes(weekday);\n    if (!worksToday) continue;\n\n    const fullMember = rosterById[String(shiftMember.memberId)] || shiftMember;\n\n    scheduled.push({\n      date,\n      weekday,\n      shiftName: shift.name,\n      shiftStart: shift.start,\n      shiftEnd: shift.end,\n      memberId: fullMember.memberId,\n      identifier: fullMember.identifier,\n      name: fullMember.name,\n      title: fullMember.title || null,\n      workRoleId: fullMember.workRoleId,\n      workTypeId: fullMember.workTypeId ?? config.workTypeId,\n      locationId: fullMember.locationId ?? config.locationId,\n      businessUnitId: config.businessUnitId,\n      chargeToType: config.chargeToType,\n      chargeToId: config.chargeToId,\n      internalCompanyId: config.companyId,\n      dailyBillable: Number(fullMember.dailyBillable ?? dailyHours.billable),\n      dailyAdmin: Number(fullMember.dailyAdmin ?? dailyHours.admin),\n    });\n  }\n}\n\nif (!scheduled.length) {\n  return [];\n}\n\nscheduled.sort((a, b) =>\n  String(a.identifier || a.name || a.memberId).localeCompare(\n    String(b.identifier || b.name || b.memberId)\n  )\n);\n\nconst results = [];\n\nfor (const analyst of scheduled) {\n  const memberKey = String(analyst.memberId);\n  const allowedCompanyIds = Array.isArray(allowedBillingMap[memberKey])\n    ? allowedBillingMap[memberKey].map(id => String(id))\n    : [];\n\n  const allowedCustomers = allowedCompanyIds\n    .map(id => customerById[id])\n    .filter(Boolean);\n\n  const billableHours = analyst.dailyBillable;\n  const adminHours = analyst.dailyAdmin;\n\n  const billableRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours);\n  const fullRange = toUtcRange(analyst.date, analyst.shiftStart, billableHours + adminHours);\n\n  if (allowedCustomers.length > 0 && billableHours > 0) {\n    const offset = customerOffset(date, memberKey, allowedCustomers.length);\n    const client = allowedCustomers[offset];\n    const agreementId = agreementMap[String(client.companyId)] || null;\n\n    const billableBody = {\n      company: { id: client.companyId },\n      chargeToType: 'Company',\n      member: { id: analyst.memberId },\n      locationId: analyst.locationId,\n      businessUnitId: analyst.businessUnitId,\n      workType: { id: analyst.workTypeId },\n      workRole: { id: analyst.workRoleId },\n      timeStart: billableRange.start,\n      timeEnd: billableRange.end,\n      actualHours: billableHours,\n      billableOption: 'Billable',\n      notes: `${analyst.shiftName} shift SOC coverage`,\n      addToDetailDescriptionFlag: false,\n      addToInternalAnalysisFlag: false,\n      addToResolutionFlag: false,\n    };\n\n    if (agreementId) {\n      billableBody.agreement = { id: agreementId };\n    }\n\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'billable',\n        clientCompanyId: client.companyId,\n        clientName: client.name,\n        agreementId,\n        body: billableBody,\n      },\n    });\n  } else {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        agreementId: null,\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.start,\n          timeEnd: fullRange.end,\n          actualHours: billableHours + adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift internal SOC coverage`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n\n    continue;\n  }\n\n  if (adminHours > 0) {\n    results.push({\n      json: {\n        memberId: analyst.memberId,\n        name: analyst.name,\n        identifier: analyst.identifier,\n        weekday: analyst.weekday,\n        shiftName: analyst.shiftName,\n        type: 'admin',\n        clientCompanyId: analyst.internalCompanyId,\n        clientName: 'Internal Admin',\n        agreementId: null,\n        body: {\n          company: { id: analyst.internalCompanyId },\n          chargeToType: analyst.chargeToType || 'ChargeCode',\n          chargeToId: analyst.chargeToId,\n          member: { id: analyst.memberId },\n          locationId: analyst.locationId,\n          businessUnitId: analyst.businessUnitId,\n          workType: { id: analyst.workTypeId },\n          workRole: { id: analyst.workRoleId },\n          timeStart: billableRange.end,\n          timeEnd: fullRange.end,\n          actualHours: adminHours,\n          billableOption: 'DoNotBill',\n          notes: `${analyst.shiftName} shift admin`,\n          addToDetailDescriptionFlag: false,\n          addToInternalAnalysisFlag: false,\n          addToResolutionFlag: false,\n        },\n      },\n    });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -176
+      ],
+      "id": "57cbb118-b66e-4658-810c-4cdb6ea0f483",
+      "name": "CW Payload"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agreementMap: {\n        \"23380\": 937,\n        \"27273\": 907,\n        \"28075\": 795,\n        \"23530\": 978,\n        \"26401\": 734,\n        \"32589\": 998,\n        \"23474\": 796,\n        \"32051\": 662,\n        \"21553\": 757,\n        \"32608\": 988\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        256
+      ],
+      "id": "6dba44a0-6e32-4059-af43-5190a9c840f4",
+      "name": "Agreement IDs By Customer"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        352,
+        -176
+      ],
+      "id": "3bd261d1-95a5-48ac-94de-c526e8d62eb9",
+      "name": "Merge4"
     }
   ],
-  "pinData": {},
   "connections": {
-    "Schedule Trigger": {
+    "CW NON-Billable Post 2hrs": {
+      "main": [
+        []
+      ]
+    },
+    "CW Billable Post 8hrs": {
+      "main": [
+        []
+      ]
+    },
+    "Set Current Date and Time GMT -7": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schedule/shift version": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "SOC Clients": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOC Roster": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Current Date and Time GMT -7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SOC Roster",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SOC Clients",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "schedule/shift version",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Billing Mapper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Agreement IDs By Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If": {
       "main": [
         [
           {
             "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CW NON-Billable Post 2hrs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing Mapper": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
             "type": "main",
             "index": 0
           }
@@ -126,9 +470,37 @@
             "node": "CW Billable Post 8hrs",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "CW Payload": {
+      "main": [
+        [
           {
-            "node": "CW NON-Billable Post 2hrs",
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agreement IDs By Customer": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "CW Payload",
             "type": "main",
             "index": 0
           }
@@ -136,6 +508,7 @@
       ]
     }
   },
+  "pinData": {},
   "active": false,
   "settings": {
     "executionOrder": "v1",
